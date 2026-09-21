@@ -1,0 +1,13 @@
+# LaTeX build files
+*.aux
+*.log
+*.out
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+# simulation output (regenerate with `make sim`)
+spice/*.txt
+spice/*.log
+# python
+__pycache__/
+*.pyc

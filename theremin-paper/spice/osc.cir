@@ -1,0 +1,31 @@
+* oscillator check
+.include models.inc
+Vdd vdd 0 5
+* reference U1B
+XB yb ob vdd SCHMITT_INV
+R2 ob yb 10k
+C2 yb 0 100p
+* antenna osc U1A (RV1 param), C1 + Cant 8p
+.param rv=4160
+XA ya oa vdd SCHMITT_INV
+R1 oa m 5.1k
+RV1 m ya {rv}
+C1 ya 0 100p
+Cant ya 0 8p
+.ic V(yb)=0 V(ya)=0
+.tran 2n 60u 0 2n
+.control
+foreach r 0 2000 4160 6000 10000
+  alterparam rv=$r
+  reset
+  run
+  meas tran tb1 WHEN V(ob)=2.5 RISE=10
+  meas tran tb2 WHEN V(ob)=2.5 RISE=40
+  meas tran ta1 WHEN V(oa)=2.5 RISE=10
+  meas tran ta2 WHEN V(oa)=2.5 RISE=40
+  let fb=30/(tb2-tb1)
+  let fa=30/(ta2-ta1)
+  print $r fa fb
+end
+.endc
+.end

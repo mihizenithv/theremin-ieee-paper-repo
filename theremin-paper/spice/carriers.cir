@@ -1,0 +1,43 @@
+* Full theremin netlist (behavioural) - matches Fig. 2
+.include models.inc
+Vdd vdd 0 5
+* U1B reference oscillator
+XB yb ob vdd SCHMITT_INV
+R2 ob yb 10k
+C2 yb 0 100p
+* U1A antenna oscillator; RV1 offset from zero beat (4129.6) by +23 ohm => fA ~ 1 kHz below fB
+XA ya oa vdd SCHMITT_INV
+R1 oa m 5.1k
+RV1 m ya 4152.6
+C1 ya 0 100p
+Cant ya 0 8p
+* U1C NAND mixer, U1D inverter
+XC oa ob nd vdd NAND2
+XD nd nd an vdd NAND2
+* U2A Sallen-Key LPF
+R3 an p 10k
+R4 p q 10k
+C3 p sk 2.2n
+C4 q 0 1n
+XU2 q sk sk vdd OPAMP
+* coupling, attenuator, volume (full)
+C5 sk c5 1u
+R5 c5 w 100k
+RV2 w 0 10k
+* LM386, gain 20
+XU3 w 0 lo vdd LM386
+R6 lo z 10
+C8 z 0 47n
+C7 lo spk 220u
+RL spk 0 8
+.ic V(yb)=0 V(ya)=1.0 V(sk)=1.16 V(c5)=0 V(w)=0 V(lo)=2.5 V(spk)=0
+.options method=gear
+.tran 2n 40u 0 0.5n
+.control
+set filetype=ascii
+save oa ob an nd sk
+run
+linearize oa ob an
+wrdata carriers.txt V(oa) V(ob) V(an)
+.endc
+.end

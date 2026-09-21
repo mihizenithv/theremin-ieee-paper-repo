@@ -1,0 +1,128 @@
+\documentclass[border=6pt]{standalone}
+\usepackage[siunitx,american]{circuitikz}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usetikzlibrary{backgrounds}
+\ctikzset{logic ports=ieee, logic ports/scale=0.8, resistors/scale=0.75, capacitors/scale=0.75,
+          bipoles/length=1.25cm, tripoles/op amp/width=1.1}
+\definecolor{navy}{HTML}{1F4E79}\definecolor{leaf}{HTML}{3B6E2A}\definecolor{rust}{HTML}{A63D32}\definecolor{plum}{HTML}{6B4C8A}
+\tikzset{
+  pin/.style={font=\footnotesize, text=navy!80},
+  net/.style={font=\small\itshape, text=rust},
+  ref/.style={font=\small\bfseries},
+  frame/.style={draw=#1!55, dashed, rounded corners=4pt, line width=0.6pt, fill=#1!3},
+  ftitle/.style={font=\small\bfseries, text=#1, anchor=north west},
+}
+\newcommand{\hyst}[1]{\draw[line width=0.4pt] ($(#1)+(-0.14,-0.08)$) -- ++(0.16,0) -- ++(0,0.16) -- ++(0.1,0);
+  \draw[line width=0.4pt] ($(#1)+(-0.10,-0.08)$) -- ++(0,0.16) -- ++(0.16,0);}
+\begin{document}
+\begin{circuitikz}[font=\small]
+%------------------------------------------------------------------ frames
+\begin{scope}[on background layer]
+\draw[frame=navy] (-1.2,3.7) rectangle (5.3,13.6);
+\draw[frame=navy] (5.9,5.2) rectangle (11.0,9.6);
+\draw[frame=leaf] (11.4,4.6) rectangle (17.5,10.6);
+\draw[frame=plum] (17.9,2.6) rectangle (28.2,10.6);
+\draw[frame=rust] (-1.2,-3.0) rectangle (9.6,2.4);
+\draw[frame=gray] (10.0,-3.0) rectangle (28.2,2.4);
+\end{scope}
+\node[ftitle=navy] at (-1.1,13.55) {\textcircled{\scriptsize 1} OSCILLATORS  (U1A, U1B)};
+\node[ftitle=navy] at (6.0,9.55) {\textcircled{\scriptsize 2} MIXER  (U1C, U1D)};
+\node[ftitle=leaf] at (11.5,10.55) {\textcircled{\scriptsize 3} CARRIER FILTER  (U2A)};
+\node[ftitle=plum] at (18.0,10.55) {\textcircled{\scriptsize 4} VOLUME + POWER AMPLIFIER  (U3)};
+\node[ftitle=rust] at (-1.1,2.35) {\textcircled{\scriptsize 5} POWER SUPPLY};
+\node[ftitle=gray] at (10.1,2.35) {\textcircled{\scriptsize 6} DECOUPLING AND UNUSED OP-AMP};
+
+%------------------------------------------------------------------ U1A antenna oscillator
+\node[nand port] (GA) at (3.1,9.5) {}; \hyst{GA.center}
+\node[ref, above] at ($(GA.north)+(0,0.05)$) {U1A};
+\draw (GA.in 1) -| (1.8,9.5) |- (GA.in 2);
+\node[pin] at ($(GA.in 1)+(-0.15,0.17)$) {1};\node[pin] at ($(GA.in 2)+(-0.15,-0.17)$) {2};\node[pin] at ($(GA.out)+(0.15,0.2)$) {3};
+\draw (1.8,9.5) node[circ]{} to[C, l_={$C_1$}, a^={100\,pF}] (1.8,7.9) node[ground]{};
+\draw (1.8,9.5) -- (1.0,9.5) node[circ]{} -- (-0.2,9.5) -- (-0.2,11.1) node[antenna]{};
+\node[ref, anchor=west] at (0.05,11.95) {ANT};
+\node[font=\footnotesize, text=rust, align=center] at (-0.55,8.6) {hand\\$C_h$};
+\draw[rust, dashed, -{Latex[length=3pt]}] (-0.55,9.0) -- (-0.25,9.9);
+\draw (GA.out) -- (4.6,9.5) node[circ]{} -- (4.6,11.2) to[R, l_={$R_1$}, a^={5.1\,k$\Omega$}] (2.8,11.2) to[vR, l_={$RV_1$}, a^={10\,k$\Omega$}] (1.0,11.2) -- (1.0,9.5);
+\node[font=\footnotesize\bfseries, text=leaf] at (1.9,12.3) {PITCH};
+
+%------------------------------------------------------------------ U1B reference oscillator
+\node[nand port] (GB) at (3.1,5.5) {}; \hyst{GB.center}
+\node[ref, above] at ($(GB.north)+(0,0.05)$) {U1B};
+\draw (GB.in 1) -| (1.8,5.5) |- (GB.in 2);
+\node[pin] at ($(GB.in 1)+(-0.15,0.17)$) {5};\node[pin] at ($(GB.in 2)+(-0.15,-0.17)$) {6};\node[pin] at ($(GB.out)+(0.15,-0.2)$) {4};
+\draw (1.8,5.5) node[circ]{} to[C, l_={$C_2$}, a^={100\,pF}] (1.8,3.9) node[ground]{};
+\draw (GB.out) -- (4.6,5.5) node[circ]{} -- (4.6,7.1) to[R, l_={$R_2$}, a^={10\,k$\Omega$}] (1.8,7.1) -- (1.8,5.5);
+
+%------------------------------------------------------------------ U1C mixer, U1D inverter
+\node[nand port] (GC) at (7.6,7.4) {}; \hyst{GC.center}
+\node[ref, above] at ($(GC.north)+(0,0.05)$) {U1C};
+\draw (4.6,9.5) -- (6.4,9.5) |- (GC.in 1);
+\draw (4.6,5.5) -- (6.4,5.5) |- (GC.in 2);
+\node[net] at (5.62,9.82) {$f_A$}; \node[net] at (5.62,5.82) {$f_B$};
+\node[pin] at ($(GC.in 1)+(-0.15,0.17)$) {8};\node[pin] at ($(GC.in 2)+(-0.15,-0.17)$) {9};\node[pin] at ($(GC.out)+(0.2,0.2)$) {10};
+\node[nand port] (GD) at (9.9,7.4) {}; \hyst{GD.center}
+\node[ref, above] at ($(GD.north)+(0,0.05)$) {U1D};
+\draw (GC.out) -- (8.8,7.4) node[circ]{}; \draw (8.8,7.4) |- (GD.in 1); \draw (8.8,7.4) |- (GD.in 2);
+\node[pin] at ($(GD.in 1)+(-0.2,0.17)$) {12};\node[pin] at ($(GD.in 2)+(-0.2,-0.17)$) {13};\node[pin] at ($(GD.out)+(0.2,0.2)$) {11};
+\node[font=\footnotesize, text=gray!70!black, align=center] at (8.8,5.85) {NAND, then invert $\Rightarrow$ $A\!\cdot\!B$};
+
+%------------------------------------------------------------------ U2A Sallen-Key LPF
+\draw (GD.out) to[R, l={$R_3$}, a_={10\,k$\Omega$}] (13.2,7.4) node[circ](P){} to[R, l={$R_4$}, a_={10\,k$\Omega$}] (14.9,7.4) node[circ](Q){};
+\node[net] at (11.3,7.05) {$v_{mix}$};
+\node[op amp, noinv input up, anchor=+] (OA) at (15.3,7.4) {};
+\node[ref, anchor=south] at ($(OA.center)+(-0.75,1.0)$) {U2A};
+\node[font=\footnotesize, anchor=south] at ($(OA.center)+(0.45,1.02)$) {MCP602};
+\node[pin] at ($(OA.+)+(0.18,0.2)$) {3};\node[pin] at ($(OA.-)+(0.18,-0.2)$) {2};\node[pin] at ($(OA.out)+(0.05,0.25)$) {1};
+\draw (Q) -- (OA.+);
+\draw (Q) to[C, l_={$C_4$ 1\,nF}] (14.9,5.1) node[ground]{};
+\draw (P) -- (13.2,9.5) to[C, l={$C_3$}, a_={2.2\,nF}] (17.0,9.5) -- (17.0,7.0) node[circ](O){};
+\draw (OA.out) -- (O);
+\draw (OA.-) -- ++(0,-0.75) -| (O);
+\node[net] at (16.45,6.2) {$v_{LPF}$};
+
+%------------------------------------------------------------------ volume + LM386
+\draw (O) to[C, l={$C_5$}, a_={1\,$\mu$F}] (19.4,7.0) to[R, l={$R_5$}, a_={100\,k$\Omega$}] (21.4,7.0) -- (21.4,6.8);
+\draw (21.4,6.8) to[pR, n=pot, l_={$RV_2$ 10\,k$\Omega$}] (21.4,4.5) node[ground]{};
+\node[font=\footnotesize\bfseries, text=leaf, anchor=east] at (21.1,4.2) {VOLUME};
+\node[op amp, noinv input up, anchor=+] (AMP) at (22.9,6.0) {};
+\node[ref, anchor=south] at ($(AMP.center)+(-1.0,1.0)$) {U3};
+\node[font=\footnotesize, anchor=south] at ($(AMP.center)+(-1.0,1.42)$) {LM386};
+\node[pin] at ($(AMP.+)+(0.18,0.2)$) {3};\node[pin] at ($(AMP.-)+(0.18,-0.2)$) {2};\node[pin] at ($(AMP.out)+(0.12,0.25)$) {5};
+\draw (pot.wiper) -- (22.3,5.65) |- (AMP.+);
+\draw (AMP.-) -- ++(-0.7,0) -- ++(0,-0.45) node[ground]{};
+\draw (AMP.up) -- ++(0,0.8) node[vcc]{+5\,V}; \node[pin] at ($(AMP.up)+(0.22,0.3)$) {6};
+\draw (AMP.down) to[eC, l^={$C_6$ 10\,$\mu$F}] ++(0,-1.9) node[ground]{}; \node[pin] at ($(AMP.down)+(0.22,-0.25)$) {7};
+\draw (AMP.out) -- ++(1.2,0) node[circ](o5){} to[eC, l={$C_7$ 220\,$\mu$F}] ++(2.5,0) coordinate(sp) to[loudspeaker, l={LS1}, a_={8\,$\Omega$}] ++(0,-2.3) node[ground]{};
+\draw (o5) to[R, l^={$R_6$ 10\,$\Omega$}] ++(0,-1.3) to[C, l^={$C_8$ 47\,nF}] ++(0,-1.3) node[ground]{};
+\node[font=\footnotesize, text=gray!70!black, align=left, anchor=north west] at (23.9,10.0) {Gain = 20 (pins 1, 8 open)\\$R_6C_8$: Zobel network};
+
+%------------------------------------------------------------------ power supply
+\draw (0.2,1.2) to[battery1, l_={BT1 9\,V}] (0.2,-1.3) node[ground]{};
+\node[draw, thick, minimum width=2.1cm, minimum height=1.4cm, align=center, fill=white] (REG) at (4.2,1.0) {\textbf{U4}\\7805};
+\draw (0.2,1.2) -- (REG.west |- 0,1.2);
+\node[font=\scriptsize, anchor=north west] at (REG.north west) {IN};\node[font=\scriptsize, anchor=north east] at (REG.north east) {OUT};
+\node[font=\scriptsize, anchor=south] at (REG.south) {GND};
+\draw (REG.south) -- ++(0,-0.6) node[ground]{};
+\draw (1.6,1.2) node[circ]{} to[C, l^={$C_9$ 0.33\,$\mu$F}] (1.6,-1.3) node[ground]{};
+\draw (REG.east |- 0,1.2) -- (9.3,1.2) node[vcc]{+5\,V};
+\draw (5.9,1.2) node[circ]{} to[eC, l^={$C_{10}$ 10\,$\mu$F}] (5.9,-1.3) node[ground]{};
+\draw (7.95,1.2) node[circ]{} to[C, l^={$C_{11}$ 0.1\,$\mu$F}] (7.95,-1.3) node[ground]{};
+
+%------------------------------------------------------------------ decoupling + U2B
+\draw (10.6,1.1) node[vcc]{+5\,V} -- (19.3,1.1);
+\draw (10.6,-2.0) node[ground]{} -- (19.3,-2.0);
+\foreach \x/\n/\v/\w in {11.8/12/0.1\,$\mu$F/U1: 14--7, 14.4/13/0.1\,$\mu$F/U2: 8--4, 17.0/14/0.1\,$\mu$F/U3: 6--4}{
+  \draw (\x,1.1) node[circ]{} to[C, l^={$C_{\n}$ \v}] (\x,-2.0) node[circ]{};
+  \node[font=\footnotesize, text=navy] at (\x,1.55) {\w};
+}
+\draw (19.3,1.1) node[circ]{} to[eC, l^={$C_{15}$ 10\,$\mu$F}] (19.3,-2.0) node[circ]{};
+\node[font=\footnotesize, text=navy] at (19.3,1.55) {U3 bulk};
+\node[op amp, noinv input up] (OB) at (23.4,-0.3) {};
+\node[ref, anchor=south] at ($(OB.center)+(-0.6,1.0)$) {U2B};
+\node[pin] at ($(OB.+)+(0.18,0.2)$) {5};\node[pin] at ($(OB.-)+(0.18,-0.2)$) {6};\node[pin] at ($(OB.out)+(0.05,0.25)$) {7};
+\draw (OB.+) -- ++(-0.5,0) -- ++(0,-0.9) node[ground]{};
+\draw (OB.-) -- ++(0,-0.75) -| ($(OB.out)+(0.4,0)$) -- (OB.out);
+\node[font=\footnotesize, text=gray!70!black, align=left, anchor=west] at (25.0,-0.3) {unused half\\of MCP602:\\follower at 0\,V};
+\end{circuitikz}
+\end{document}
